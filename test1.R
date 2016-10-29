@@ -3,6 +3,8 @@ library(tidyverse); library(doMC); library(stringr)
 registerDoMC(cores = detectCores()-1)
 setwd("~/Documents/PhD/Projects/medicare-quality/physician-compare")
 
+options(scipen = 100)
+
 states <- read.csv("states.csv", as.is = TRUE)
 
 
@@ -13,9 +15,9 @@ states <- read.csv("states.csv", as.is = TRUE)
 # raw_PCNDF <- readRDS("Physician_Compare_National_Downloadable_File.RDS")
 
 
+raw_individual <- read.csv("Physician_Compare_2014_Individual_EP_Public_Reporting_-_Clinical_Quality_Of_Care.csv", as.is = TRUE)
 
-
-raw_CQOC <- read.csv("Physician_Compare_2014_Group_Practice_Public_Reporting_-_Clinical_Quality_Of_Care.csv", as.is = TRUE)
+raw_practice <- read.csv("Physician_Compare_2014_Group_Practice_Public_Reporting_-_Clinical_Quality_Of_Care.csv", as.is = TRUE)
 
 
 # qplot(raw_CQOC$Getting.a.flu.shot.during.flu.season.)
@@ -24,19 +26,50 @@ raw_CQOC <- read.csv("Physician_Compare_2014_Group_Practice_Public_Reporting_-_C
 # qplot(raw_CQOC$Screening.for.tobacco.use.and.providing.help.quitting.when.needed.)
 # qplot(raw_CQOC$Prescribing.medicine.to.improve.the.pumping.action.of.the.heart.in.patients.who.have.both.heart.disease.and.certain.other.conditions.)
 
-CQOC <- raw_CQOC %>% dplyr::select(-starts_with("Footnote"))
 
-CQOC <- full_join(CQOC, states, by = c("State" = "Abbreviation")) %>%
+
+
+
+individual <- raw_individual %>% dplyr::select(-starts_with("Footnote"))
+
+mclapply(individual, function(i) summary(i, useNA="always"))
+
+psych::describe(individual, fast = TRUE)
+
+individual %>% 
+    select(5:10) %>%
+    summarise_each(funs = c("mean(., na.rm=TRUE)")) %>% t
+
+
+
+
+
+source("https://raw.githubusercontent.com/briatte/ggcorr/master/ggcorr.R")
+plotCorrMat <- ggcorr(individual[5:10],
+                      method = c("pairwise", "pearson"),
+                      label = TRUE, label_size = 5,
+                      mid = "white")
+plot(plotCorrMat)
+# ggsave(plotCorrMat, 
+#        filename = "xxxxxx_corrMat.eps",
+#        width = 200, height = 240, units = "mm")
+
+
+
+
+practice <- raw_practice %>% dplyr::select(-starts_with("Footnote"))
+
+practice <- full_join(practice, states, by = c("State" = "Abbreviation")) %>%
     mutate(stateName = str_to_lower(State.y))
 
+mclapply(practice, function(i) summary(i, useNA="always"))
 
-mclapply(CQOC, function(i) summary(i, useNA="always"))
 
-CQOC %>%
+practice %>%
     group_by(State) %>%
     summarise_each(funs = "mean(., na.rm=TRUE)") %>% View
 
-av.CQOC <- CQOC %>%
+av.practice <- practice %>%
     group_by(State) %>%
     summarise_each(funs = "mean(., na.rm=TRUE)") %>%
     left_join(., states, by = c("State" = "Abbreviation")) %>%
@@ -50,7 +83,7 @@ us <- map_data("state")
 ggplot() + 
     geom_map(data = us, map = us, aes(x=long, y=lat, map_id = region),
              fill = "#ffffff", color = "#ffffff", size = 0.15) + 
-    geom_map(data = av.CQOC, map = us, 
+    geom_map(data = av.practice, map = us, 
              aes(fill = Getting.a.flu.shot.during.flu.season., map_id = region),
              color = "#ffffff", size = 0.15) + 
     scale_fill_gradientn(colours = c("#2b8cbe", "white", "#d7301f")) + 
@@ -70,7 +103,7 @@ ggplot() +
 ggplot() + 
     geom_map(data = us, map = us, aes(x=long, y=lat, map_id = region),
              fill = "#ffffff", color = "#ffffff", size = 0.15) + 
-    geom_map(data = av.CQOC, map = us, 
+    geom_map(data = av.practice, map = us, 
              aes(fill = Screening.for.depression.and.developing.a.follow.up.plan., map_id = region),
              color = "#ffffff", size = 0.15) + 
     scale_fill_gradientn(colours = c("#2b8cbe", "white", "#d7301f")) + 
@@ -90,7 +123,7 @@ ggplot() +
 ggplot() + 
     geom_map(data = us, map = us, aes(x=long, y=lat, map_id = region),
              fill = "#ffffff", color = "#ffffff", size = 0.15) + 
-    geom_map(data = av.CQOC, map = us, 
+    geom_map(data = av.practice, map = us, 
              aes(fill = Screening.for.tobacco.use.and.providing.help.quitting.when.needed., map_id = region),
              color = "#ffffff", size = 0.15) + 
     scale_fill_gradientn(colours = c("#2b8cbe", "white", "#d7301f")) + 
@@ -110,7 +143,7 @@ ggplot() +
 ggplot() + 
     geom_map(data = us, map = us, aes(x=long, y=lat, map_id = region),
              fill = "#ffffff", color = "#ffffff", size = 0.15) + 
-    geom_map(data = av.CQOC, map = us, 
+    geom_map(data = av.practice, map = us, 
              aes(fill = Screening.for.colorectal..colon.or.rectum..cancer., map_id = region),
              color = "#ffffff", size = 0.15) + 
     scale_fill_gradientn(colours = c("#2b8cbe", "white", "#d7301f")) + 
@@ -131,7 +164,7 @@ ggplot() +
 ggplot() + 
     geom_map(data = us, map = us, aes(x=long, y=lat, map_id = region),
              fill = "#ffffff", color = "#ffffff", size = 0.15) + 
-    geom_map(data = av.CQOC, map = us, 
+    geom_map(data = av.practice, map = us, 
              aes(fill = Screening.for.breast.cancer., map_id = region),
              color = "#ffffff", size = 0.15) + 
     scale_fill_gradientn(colours = c("#2b8cbe", "white", "#d7301f")) + 
