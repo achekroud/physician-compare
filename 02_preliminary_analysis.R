@@ -38,8 +38,7 @@ psych::describe(individual, fast = TRUE)
 
 individual %>% 
     select(5:10) %>%
-    summarise_each(funs = c("mean(., na.rm=TRUE)")) %>% t
-
+    summarise_each(funs = c("mean(., na.rm=TRUE)")) %>% t -> av.individual
 
 
 
@@ -75,6 +74,29 @@ av.practice <- practice %>%
     left_join(., states, by = c("State" = "Abbreviation")) %>%
     mutate(region = str_to_lower(State.y.y))
 
+
+
+
+av.individual 
+
+practice %>%
+    summarise_each(funs = "mean(., na.rm=TRUE)") %>% 
+    select(5:10) %>% 
+    t %>%
+    cbind(., av.individual) %>% 
+    as.data.frame %>% 
+    tibble::rownames_to_column() %>%
+    transmute(Measure = rowname,
+              Individual_Physicians = V1,
+              Group_Practices = V2)
+
+
+
+
+
+
+
+### Mapping
 us <- map_data("state")
 
 
