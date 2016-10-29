@@ -13,3 +13,6 @@ download.file(url = URL, destfile = "physician-compare-bundle.zip", method = "cu
 ## Unzip bundle to the working directory
 system("unzip -o physician-compare-bundle.zip")
 
+system("rm -rf physician-compare-bundle.zip")
+
+
