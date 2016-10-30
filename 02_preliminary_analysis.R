@@ -1,5 +1,5 @@
 
-library(tidyverse); library(doMC); library(stringr)
+library(tidyverse); library(doMC); library(stringr); library(maps)
 registerDoMC(cores = detectCores()-1)
 setwd("~/Documents/PhD/Projects/medicare-quality/physician-compare")
 
